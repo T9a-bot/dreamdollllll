@@ -232,6 +232,7 @@ class MyBot(BaseBot):
 
    
 
+    
     if message.lower().startswith("!help"):
       await self.highrise.send_whisper(
           user.id,
