@@ -36,14 +36,36 @@ class MyBot(BaseBot):
     super().__init__()
     self.user_positions = {}
 
-
+  async def on_user_move(self, user: User, pos: Position) -> None:
+     self.user_positions[user.username] = pos
+     print (f"{user.username} moved to {pos}")
 
  
   async def on_whisper(self, user: User, message: str):
     if user.username == "T9s":
       await self.highrise.chat(message)
 
-  
+  async def teleport_user_next_to(self, target_username: str,requester_user: User):
+
+    room_users = await self.highrise.get_room_users()
+    requester_position = None
+    
+    for user, position in room_users.content:
+      if user.id == requester_user.id:
+          requester_position = position
+          break
+    for user, position in room_users.content:
+      if user.username.lower() == target_username.lower():
+          z = requester_position.z
+          new_z = z + 1
+        
+          user_dict = {
+            "id":
+            user.id,
+            "position":
+            Position(requester_position.x, requester_position.y, new_z, requester_position.facing)
+          }
+          await self.highrise.teleport(user_dict["id"], user_dict["position"])
 
   async def on_user_join(self, user: User, position: Position | AnchorPosition):
         room_users = await self.highrise.get_room_users()
@@ -66,6 +88,20 @@ class MyBot(BaseBot):
   
   async def on_chat(self, user: User, message: str):
 
+
+    if message.startswith("!to"):
+      words = message.split(" ")
+      if len(words) > 1:
+          target_username = words[1].replace("@", "")
+          if target_username in self.user_positions:
+              target_position = self.user_positions[target_username]
+              await self.highrise.teleport(user.id, target_position)
+              await self.highrise.chat(f"You have been pulled to {target_username}")
+          else:
+              await self.highrise.chat("User not found.")
+      else:
+          await self.highrise.chat("Username must be specified.")
+
     if message.startswith("!come") and user.username in ["T9s", "dreamdollllll"]:
       response = await self.highrise.get_room_users()
       your_pos = None
@@ -80,6 +116,16 @@ class MyBot(BaseBot):
       await self.highrise.chat("I,m coming ")
       await self.highrise.walk_to(your_pos)
 
+    if message == "1st":
+      await self.highrise.teleport(user.id, Position(13.5, 0.0, 19.5))
+
+    if message == "2nd":
+      await self.highrise.teleport(user.id, Position(15.0, 7.25, 21.5))
+
+    if message == "3rd":
+      await self.highrise.teleport(user.id, Position(15.5, 14.5, 20.0))
+
+    
     if message.startswith("Float"):
       await self.highrise.send_emote("emote-float", user.id)
     if message.startswith("Tiktok2"):
