@@ -463,7 +463,13 @@ class MyBot(BaseBot):
     if message.lower().startswith("!looplist"):
       await self.highrise.send_whisper(
           user.id,
-          "Angry, Savage, Dontstartnow, Yoga Flow, Shopping, Russian, Macarena, Blackpink, Bashful, Anime, Tiktok10, Sayso, Uwu, Fashion, Gravity, Icescream, Weird, Cute, Superpose, Frog, Snake, Gagging, Flex, Pose5, Pose3, Pose7, Pose8, Telekinesis, Pennywise, Teleport, Swordfight, Snow, Greedy, Singalong"
+          "Angry, Savage, Dontstartnow, Yoga Flow, Shopping, Russian, Macarena, Blackpink, Bashful, Anime, Tiktok10, "
+      )
+
+    if message.lower().startswith("!looplist"):
+      await self.highrise.send_whisper(
+          user.id,
+          " Sayso, Uwu, Fashion, Gravity, Icescream, Weird, Cute, Superpose, Frog, Snake, Gagging, Flex, Pose5, Pose3, Pose7, Pose8, Telekinesis, Pennywise, Teleport, Swordfight, Snow, Greedy, Singalong"
       )
 
     if message.lower().startswith("!help"):
