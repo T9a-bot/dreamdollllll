@@ -17,7 +17,94 @@ from asyncio import Task
 from highrise.__main__ import *
 from highrise.models import (AnchorPosition, CurrencyItem,Item,Position,SessionMetadata,User,)
 
+emote_list : list[tuple[str, str]] = [('Sleep', 'idle-sleep'), ('Singalong', 'idle_singing'), ('Greedy', 'emote-greedy'), ('Snow', 'emote-snowball'), ('Teleport', 'emote-teleporting'), ('Swordfight', 'emote-swordfight'), ('Pennywise', 'dance-Pennywise'), ('Telekinesis', 'emote-telekinesis'), ('Pose8', 'emote-pose8'), ('Pose7', 'emote-pose7'), ('Pose3', 'emote-pose3'), ('Pose5', 'emote-Pose5'), ('Flex', 'emoji-flex'), ('Gagging', 'emoji-gagging'), ('Maniac', 'emote-maniac'), ('Snake', 'emote-snake'), ('Frog', 'emote-frog'), ('Superpose', 'emote-superpose'), ('Cute', 'emote-cute'), ('Weird', 'dance-weird'), ('Icescream', 'dance-icescream'), ('Gravity', 'emote-gravity'), ('Fashion', 'emote-fashionista'), ('Uwu', 'idle-uwu'), ('Sayso', 'idle-dance-tiktok4'), ('Tiktok10', 'dance-tiktok10'), ('Anime', 'dance-anime'), ('Bashful', 'emote-shy2'), ('Pouty', 'idle-sad'), ('Sleepy', 'idle-loop-tired'), ('Sit', 'idle-loop-sitfloor'), ('Shy', 'idle-loop-shy'), ('Enthused', 'idle-enthusiastic'), ('Feel The Beat', 'idle-dance-headbobbing'), ('Yes', 'emote-yes'), ('The Wave', 'emote-wave'), ('Tired', 'emote-tired'), ('Think', 'emote-think'), ('Theatrical', 'emote-theatrical'), ('Snowangel', 'emote-snowangel'), ('Shy', 'emote-shy'), ('Sad', 'emote-sad'), ('Peace', 'emote-peace'), ('No', 'emote-no'), ('Model', 'emote-model'), ('Flirty', 'emote-lust'), ('Amused', 'emote-laughing2'), ('Laugh', 'emote-laughing'), ('Kiss', 'emote-kiss'), ('Super Kick', 'emote-kicking'), ('Jump', 'emote-jumpb'), ('Judo Chop', 'emote-judochop'), ('Hot', 'emote-hot'), ('Hello', 'emote-hello'), ('Happy', 'emote-happy'), ('Face Palm', 'emote-exasperatedb'), ('Exasperated', 'emote-exasperated'), ('Collapse', 'emote-death2'), ('Revival', 'emote-death'), ('Dab', 'emote-dab'), ('Curtsy', 'emote-curtsy'), ('Confusion', 'emote-confused'), ('Cold', 'emote-cold'), ('Charging', 'emote-charging'), ('Bunny Hop', 'emote-bunnyhop'), ('Bow', 'emote-bow'), ('Boo', 'emote-boo'), ('Home Run!', 'emote-baseball'), ('Falling Apart', 'emote-apart'), ('Thumbs Up', 'emoji-thumbsup'), ('Point', 'emoji-there'), ('Sneeze', 'emoji-sneeze'), ('Smirk', 'emoji-smirking'), ('Sick', 'emoji-sick'), ('Gasp', 'emoji-scared'), ('Punch', 'emoji-punch'), ('Stunned', 'emoji-dizzy'), ('Cursing', 'emoji-cursing'), ('Sob', 'emoji-crying'), ('Clap', 'emoji-clapping'), ('Raise', 'emoji-celebrate'), ('Arrogance', 'emoji-arrogance'), ('Angry', 'emoji-angry'), ('Vogue Hands', 'dance-voguehands'), ('Savage', 'dance-tiktok8'), ("Dontstartnow", 'dance-tiktok2'), ('Yoga Flow', 'dance-spiritual'), ("Shopping", 'dance-shoppingcart'), ('Russian', 'dance-russian'), ('Macarena', 'dance-macarena'), ('Blackpink','dance-blackpink'),]
 
+
+emote_durations = { 
+    "Sleep": 15,
+    "Pouty": 10,
+    "Sleepy": 10,
+    "Sit": 15,
+    "Shy": 15,
+    "Enthused": 15,
+    "Feel The Beat": 15,
+    "Yes": 4,
+    "The Wave": 3,
+    "Tired": 5,
+    "Think": 5,
+    "Theatrical": 10,
+    "Snowangel": 7,
+    "Sad": 5,
+    "Peace": 6,
+    "No": 4,
+    "Model": 7,
+    "Flirty": 5,
+    "Amused": 10,
+    "Laugh": 4,
+    "Kiss": 4,
+    "Jump": 10,
+    "Judo Chop": 6,
+    "Hot": 6,
+    "Hello": 4,
+    "Happy": 4,
+    "Face Palm": 10,
+    "Exasperated": 10,
+    "Collapse": 10,
+    "Dab": 10,
+    "Curtsy": 3,
+    "Confusion": 10,
+    "Cold": 10,
+    "Charging": 9,
+    "Bunny Hop": 10,
+    "Bow": 4,
+    "Boo": 10,
+    "Falling Apart": 10,
+    "Thumbs Up": 4,
+    "Point": 10,
+    "Sneeze": 10,
+    "Smirk": 10,
+    "Sick": 10,
+    "Stunned": 10,
+    "Cursing": 10,
+    "Clap": 10,
+    "Raise": 10,
+    "Angry": 10,
+    "Savage": 10,
+    "Dontstartnow": 10,
+    "Yoga Flow": 10,
+    "Shopping": 10,
+    "Russian": 10,
+    "Macarena": 10,
+    "Blackpink": 10,
+    "Bashful": 9, 
+    "Anime": 10,
+    "Tiktok10": 10,
+    "Sayso": 8,
+    "Uwu": 10,
+    "Fashion": 10, 
+    "Gravity": 10,
+    "Icescream": 10,
+    "Weird": 10,
+    "Cute": 10,
+    "Superpose": 10,
+    "Frog": 10,
+    "Snake": 10,
+    "Maniac": 6,
+    "Gagging": 10,
+    "Flex": 10,
+    "Pose5": 10,
+    "Pose3": 10,
+    "Pose7": 10,
+    "Pose8": 10,
+    "Telekinesis": 10,
+    "Pennywise": 10,
+    "Teleport": 10,
+    "Swordfight": 10,
+    "Snow": 10,
+    "Greedy": 10,
+    "Singalong": 10,    
+
+}
 class BotDefinition:
   def __init__(self, bot, room_id, api_token):
       self.bot = bot
@@ -85,9 +172,85 @@ class MyBot(BaseBot):
     definitions = [BotDefinition(self, room_id, token)]
     await __main__.main(definitions)
 
-  
-  async def on_chat(self, user: User, message: str):
+  async def loop(self: BaseBot, user: User, message: str) -> None:
+    async def loop_emote(self: BaseBot, user: User, emote_name: str) -> None:
+        emote_id = ""
+        for emote in emote_list:
+            if emote[0].lower() == emote_name.lower():
+                emote_id = emote[1]
+                break
+        if emote_id == "":
+            await self.highrise.chat("Invalid emote")
+            return
 
+        await self.highrise.chat(f"@{user.username} is looping {emote_name}")
+
+        # الحصول على مدة الرقصة
+        emote_duration = emote_durations.get(emote_name)
+        if emote_duration is None:
+            await self.highrise.chat(f"The emote {emote_name} does not have a specified duration.")
+            return
+
+        while True:
+            try:
+                await self.highrise.send_emote(emote_id, user.id)
+            except:
+                await self.highrise.chat(f"Sorry, @{user.username}, this emote isn't free or you don't own it.")
+                return
+
+            # فترة انتظار لمدة الرقصة
+            await asyncio.sleep(emote_duration)
+
+            room_users = (await self.highrise.get_room_users()).content
+            user_in_room = False
+            for room_user, position in room_users:
+                if room_user.id == user.id:
+                    user_in_room = True
+                    break
+            if not user_in_room:
+                break
+
+    try:
+        splited_message = message.split(" ")
+        # The emote name is every string after the first one
+        emote_name = " ".join(splited_message[1:])
+    except:
+        await self.highrise.chat("Invalid command format. Please use '/loop <emote name>.")
+        return
+    else:   
+        taskgroup = self.highrise.tg
+        task_list: list[Task] = list(taskgroup._tasks)
+        for task in task_list:
+            if task.get_name() == user.username:
+                # Removes the task from the task group
+                task.cancel()
+
+        room_users = (await self.highrise.get_room_users()).content
+        user_list = [room_user.username for room_user, pos in room_users]
+
+        taskgroup.create_task(coro=loop_emote(self, user, emote_name))
+        task_list: list[Task] = list(taskgroup._tasks)
+        for task in task_list:
+            if task.get_coro().__name__ == "loop_emote" and task.get_name() not in user_list:
+                task.set_name(user.username)
+
+  async def stop_loop(self: BaseBot, user: User, message: str) -> None:
+    taskgroup = self.highrise.tg
+    task_list: list[Task] = list(taskgroup._tasks)
+    for task in task_list:
+        print(task.get_name())
+        if task.get_name() == user.username:
+            task.cancel()
+            await self.highrise.chat(f"Stopping your emote loop, {user.username}!")
+            return
+    await self.highrise.chat(f"You're not looping any emotes, {user.username}")
+    return
+
+  async def on_chat(self, user: User, message: str):
+    if message.lower().startswith("loop"):
+      await self.loop(user, message)
+    elif message.lower().startswith("stop loop"):
+      await self.stop_loop(user, message)
 
     if message.startswith("!to"):
       words = message.split(" ")
@@ -242,7 +405,7 @@ class MyBot(BaseBot):
     if message.startswith("anime"):
       await self.highrise.send_emote("dance-anime", user.id)
 
-    if message.lower().startswith("!help"):
+    if message.lower().startswith("!dancelist"):
       dance_list = [
           "Float",
           "Tiktok2",
@@ -270,7 +433,7 @@ class MyBot(BaseBot):
       # Send the message
       await self.highrise.send_whisper(user.id, dance_list_str)
 
-    if message.lower().startswith("!help"):
+    if message.lower().startswith("!dancelist"):
       await self.highrise.send_whisper(
           user.id,
           "Model , Penny , Tiktok10 , Telekinesis , Hot , Weird , Pose7 , Pose8 , Pose3 , Pose5 , kis , Laughing , cursing , flex , gagging , Blackpink , Tiktok8"
@@ -279,8 +442,32 @@ class MyBot(BaseBot):
    
 
     
-    if message.lower().startswith("!help"):
+    if message.lower().startswith("!dancelist"):
       await self.highrise.send_whisper(
           user.id,
           " celebrate , macarena , charging , shopp , maniac , snake  , frog , superpose , cute , tiktok9 , weird , cutey ,  punkguitar , zombierun , fashi , gravity , icecream , wrong , uwu , tiktok4 , shy2 , anime"
+      )
+
+    if message.lower().startswith("!looplist"):
+      await self.highrise.send_whisper(
+          user.id,
+          "Sleep, Pouty, Sleepy, Sit, Shy, Enthused, Feel The Beat, Yes, The Wave, Tired, Think, Theatrical, Snowangel, Sad, Peace, No, Model, Flirty, Amused, Laugh, Kiss, Jump, Judo Chop"
+      )
+
+    if message.lower().startswith("!looplist"):
+      await self.highrise.send_whisper(
+          user.id,
+          "Hot, Hello, Happy, Face Palm, Exasperated, Collapse, Dab, Confusion, Cold, Charging, Bunny Hop, Bow, Boo, Falling Apart, Thumbs Up, Point, Sneeze, Smirk, Sick, Stunned, Cursing, Clap, Raise"
+      )
+
+    if message.lower().startswith("!looplist"):
+      await self.highrise.send_whisper(
+          user.id,
+          "Angry, Savage, Dontstartnow, Yoga Flow, Shopping, Russian, Macarena, Blackpink, Bashful, Anime, Tiktok10, Sayso, Uwu, Fashion, Gravity, Icescream, Weird, Cute, Superpose, Frog, Snake, Gagging, Flex, Pose5, Pose3, Pose7, Pose8, Telekinesis, Pennywise, Teleport, Swordfight, Snow, Greedy, Singalong"
+      )
+
+    if message.lower().startswith("!help"):
+      await self.highrise.send_whisper(
+          user.id,
+          "For dances > !dancelist  \n For loop > !looplist \n For teleport > !to @user \n To transport yourself > 1st , 2nd , 3rd "
       )
