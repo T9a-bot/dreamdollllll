@@ -569,13 +569,13 @@ class MyBot(BaseBot):
 
         position_name = " ".join(args[1:])
         if position_name == '!1st':
-          dest = Position(13.5, 0.0, 19.5)
+          dest = Position(18.5, 0.0, 8.5)
 
         elif position_name == '!2nd':
-          dest = Position(15.0, 7.25, 21.5)
+          dest = Position(12.0, 9.0, 8.5)
 
         elif position_name == '!3rd':
-          dest = Position(15.0, 16.75, 22.5)
+          dest = Position(10.0, 18.0, 11.5)
 
         else:
           return await self.highrise.send_whisper(user.id,f"  The site is wrong ")
