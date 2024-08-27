@@ -2,8 +2,8 @@ from highrise.__main__ import *
 import time
 
 """Bot Settings"""
-room_id = "660dd538c10e75a9112f9207"
-bot_token = "2b01b9cb0531945fa37416568774cf0c9d0d8017c4737415849f67674407f031"
+room_id = "60fbb35c2dbe67b6963cb558"
+bot_token = "05eb2a770a99255a56af5002d4cff7ccea0a584889f1f24b4b4bb2970346fe14"
 bot_file = "main"
 bot_class = "MyBot"
 

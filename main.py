@@ -105,72 +105,34 @@ emote_durations = {
     "Singalong": 10,    
 
 }
+
 class BotDefinition:
   def __init__(self, bot, room_id, api_token):
       self.bot = bot
       self.room_id = room_id
       self.api_token = api_token
 
-
 class MyBot(BaseBot):
-
-
+  
+    
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.following_user = None
     self.banned_users = {}
     self.following_username = None
     super().__init__()
-    self.user_positions = {}
+    self.user_positions = {} 
 
   async def on_user_move(self, user: User, pos: Position) -> None:
      self.user_positions[user.username] = pos
      print (f"{user.username} moved to {pos}")
 
- 
+
+
+  
   async def on_whisper(self, user: User, message: str):
     if user.username == "T9s":
       await self.highrise.chat(message)
-
-  async def teleport_user_next_to(self, target_username: str,requester_user: User):
-
-    room_users = await self.highrise.get_room_users()
-    requester_position = None
-    
-    for user, position in room_users.content:
-      if user.id == requester_user.id:
-          requester_position = position
-          break
-    for user, position in room_users.content:
-      if user.username.lower() == target_username.lower():
-          z = requester_position.z
-          new_z = z + 1
-        
-          user_dict = {
-            "id":
-            user.id,
-            "position":
-            Position(requester_position.x, requester_position.y, new_z, requester_position.facing)
-          }
-          await self.highrise.teleport(user_dict["id"], user_dict["position"])
-
-  async def on_user_join(self, user: User, position: Position | AnchorPosition):
-        room_users = await self.highrise.get_room_users()
-        if any(room_user.id == user.id for room_user, _ in room_users.content):
-            try:
-                await self.highrise.send_whisper(user.id,
-                    f"Welcome to Find Love {user.username}"
-                )
-                await self.highrise.send_whisper(
-                    user.id,
-                    f"{user.username}, for emotes type !help"
-                )
-            except Exception as e:
-                print(f"Failed to send whisper: {e}")
-
-  async def run(self, room_id, token):
-    definitions = [BotDefinition(self, room_id, token)]
-    await __main__.main(definitions)
 
   async def loop(self: BaseBot, user: User, message: str) -> None:
     async def loop_emote(self: BaseBot, user: User, emote_name: str) -> None:
@@ -182,90 +144,119 @@ class MyBot(BaseBot):
         if emote_id == "":
             await self.highrise.chat("Invalid emote")
             return
-
-        await self.highrise.chat(f"@{user.username} is looping {emote_name}")
-
-        # الحصول على مدة الرقصة
-        emote_duration = emote_durations.get(emote_name)
-        if emote_duration is None:
-            await self.highrise.chat(f"The emote {emote_name} does not have a specified duration.")
+        user_position = None
+        user_in_room = False
+        room_users = (await self.highrise.get_room_users()).content
+        for room_user, position in room_users:
+            if room_user.id == user.id:
+                user_position = position
+                start_position = position
+                user_in_room = True
+                break
+        if user_position == None:
+            await self.highrise.chat("User not found")
             return
-
-        while True:
+        await self.highrise.chat(f"@{user.username} is looping {emote_name}")
+        while start_position == user_position:
             try:
                 await self.highrise.send_emote(emote_id, user.id)
             except:
                 await self.highrise.chat(f"Sorry, @{user.username}, this emote isn't free or you don't own it.")
                 return
-
-            # فترة انتظار لمدة الرقصة
-            await asyncio.sleep(emote_duration)
-
+            await asyncio.sleep(10)
             room_users = (await self.highrise.get_room_users()).content
             user_in_room = False
             for room_user, position in room_users:
                 if room_user.id == user.id:
+                    user_position = position
                     user_in_room = True
                     break
-            if not user_in_room:
+            if user_in_room == False:
                 break
-
     try:
         splited_message = message.split(" ")
-        # The emote name is every string after the first one
+        
         emote_name = " ".join(splited_message[1:])
     except:
-        await self.highrise.chat("Invalid command format. Please use '/loop <emote name>.")
+        await self.highrise.chat("Invalid command format. Please use '/loop <emote name>")
         return
     else:   
         taskgroup = self.highrise.tg
-        task_list: list[Task] = list(taskgroup._tasks)
+        task_list : list[Task] = list(taskgroup._tasks)
         for task in task_list:
             if task.get_name() == user.username:
                 # Removes the task from the task group
                 task.cancel()
 
         room_users = (await self.highrise.get_room_users()).content
-        user_list = [room_user.username for room_user, pos in room_users]
+        user_list  = []
+        for room_user, pos in room_users:
+            user_list.append(room_user.username)
 
         taskgroup.create_task(coro=loop_emote(self, user, emote_name))
-        task_list: list[Task] = list(taskgroup._tasks)
+        task_list : list[Task] = list(taskgroup._tasks)
         for task in task_list:
-            if task.get_coro().__name__ == "loop_emote" and task.get_name() not in user_list:
+            if task.get_coro().__name__ == "loop_emote" and not (task.get_name() in user_list):
                 task.set_name(user.username)
 
   async def stop_loop(self: BaseBot, user: User, message: str) -> None:
     taskgroup = self.highrise.tg
     task_list: list[Task] = list(taskgroup._tasks)
     for task in task_list:
-        print(task.get_name())
-        if task.get_name() == user.username:
-            task.cancel()
-            await self.highrise.chat(f"Stopping your emote loop, {user.username}!")
-            return
+      print(task.get_name())
+      if task.get_name() == user.username:
+        task.cancel()
+        await self.highrise.chat(f"Stopping your emote loop, {user.username}!")
+        return
     await self.highrise.chat(f"You're not looping any emotes, {user.username}")
     return
 
+  async def on_user_join(self, user: User, position: Position | AnchorPosition):
+        room_users = await self.highrise.get_room_users()
+        if any(room_user.id == user.id for room_user, _ in room_users.content):
+            try:
+                await self.highrise.send_whisper(user.id,
+                    f"Welcome {user.username},To 🇮🇳 INDIANS 🚩"
+                )
+                await self.highrise.send_whisper(
+                    user.id,
+                    f"{user.username}, for emotes type !help, or check bot for info"
+                )
+            except Exception as e:
+                print(f"Failed to send whisper: {e}")
+
+  async def run(self, room_id, token):
+    definitions = [BotDefinition(self, room_id, token)]
+    await __main__.main(definitions)
+
+  async def teleport_user_next_to(self, target_username: str,
+                                  requester_user: User):
+
+    room_users = await self.highrise.get_room_users()
+    requester_position = None
+
+    for user, position in room_users.content:
+      if user.id == requester_user.id:
+        requester_position = position
+        break
+    for user, position in room_users.content:
+      if user.username.lower() == target_username.lower():
+        z = requester_position.z
+        new_z = z + 1
+
+        user_dict = {
+            "id":
+            user.id,
+            "position":
+            Position(requester_position.x, requester_position.y, new_z, requester_position.facing)
+        }
+        await self.highrise.teleport(user_dict["id"], user_dict["position"])
+
+
+  
   async def on_chat(self, user: User, message: str):
-    if message.lower().startswith("loop"):
-      await self.loop(user, message)
-    elif message.lower().startswith("stop loop"):
-      await self.stop_loop(user, message)
-
-    if message.startswith("!to"):
-      words = message.split(" ")
-      if len(words) > 1:
-          target_username = words[1].replace("@", "")
-          if target_username in self.user_positions:
-              target_position = self.user_positions[target_username]
-              await self.highrise.teleport(user.id, target_position)
-              await self.highrise.chat(f"You have been pulled to {target_username}")
-          else:
-              await self.highrise.chat("User not found.")
-      else:
-          await self.highrise.chat("Username must be specified.")
-
-    if message.startswith("!come") and user.username in ["T9s", "dreamdollllll"]:
+    
+    if message.startswith("!come") and user.username in ["T9s", "JAVA32"]:
       response = await self.highrise.get_room_users()
       your_pos = None
       for content in response.content:
@@ -279,16 +270,6 @@ class MyBot(BaseBot):
       await self.highrise.chat("I,m coming ")
       await self.highrise.walk_to(your_pos)
 
-    if message == "1st":
-      await self.highrise.teleport(user.id, Position(13.5, 0.0, 19.5))
-
-    if message == "2nd":
-      await self.highrise.teleport(user.id, Position(15.0, 7.25, 21.5))
-
-    if message == "3rd":
-      await self.highrise.teleport(user.id, Position(15.5, 14.5, 20.0))
-
-    
     if message.startswith("Float"):
       await self.highrise.send_emote("emote-float", user.id)
     if message.startswith("Tiktok2"):
@@ -405,7 +386,25 @@ class MyBot(BaseBot):
     if message.startswith("anime"):
       await self.highrise.send_emote("dance-anime", user.id)
 
-    if message.lower().startswith("!dancelist"):
+    allowed_users = [
+        "T9s", "xMika_", "___ARKO___", "highmindz", "bigcheech",
+        "DarkVendetta", "Rndom__", "LadyOnHerBear", "chibisol", "kaiicandy",
+        "_fluffypanda_", "_Mr_Deo_", "SoIarity", "tilts", "XVlI", "Xymcxo",
+        "DEVDEVINE", "voltuparis", "_.I0v3._", "VANQUlSHED",
+        "BayxLeaf", "Emmybbyg", "Theeznuts", "Nej_lve", "gungeon", "Voltuparis" ,"DeathTrip","Xanny_Bars", "ersp", "scream", "Srijon", "HRtrash"
+    ]
+    if message.startswith("!summon") and user.username in [
+        "T9s", "xMika_", "___ARKO___", "highmindz", "bigcheech",
+        "DarkVendetta", "Rndom__", "LadyOnHerBear", "chibisol", "kaiicandy",
+        "_fluffypanda_", "_Mr_Deo_", "SoIarity", "tilts", "XVlI", "Xymcxo",
+        "DEVDEVINE", "voltuparis", "_.I0v3._", "VANQUlSHED",
+        "BayxLeaf", "Emmybbyg", "Theeznuts", "Nej_lve" , "gungeon","Voltuparis", "DeathTrip", "Xanny_Bars", "ersp", "scream", "Srijon", "HRtrash" , "JAVA32"
+    ]:
+      allowed_users = message.split("@")[-1].strip()
+      if allowed_users in allowed_users:
+        await self.teleport_user_next_to(allowed_users, user)
+
+    if message.lower().startswith("!help"):
       dance_list = [
           "Float",
           "Tiktok2",
@@ -433,47 +432,166 @@ class MyBot(BaseBot):
       # Send the message
       await self.highrise.send_whisper(user.id, dance_list_str)
 
-    if message.lower().startswith("!dancelist"):
+    if message.lower().startswith("!help"):
       await self.highrise.send_whisper(
           user.id,
           "Model , Penny , Tiktok10 , Telekinesis , Hot , Weird , Pose7 , Pose8 , Pose3 , Pose5 , kis , Laughing , cursing , flex , gagging , Blackpink , Tiktok8"
       )
 
-   
+    if message.startswith("!to"):
+      words = message.split(" ")
+      if len(words) > 1:
+          target_username = words[1].replace("@", "")
+          if target_username in self.user_positions:
+              target_position = self.user_positions[target_username]
+              await self.highrise.teleport(user.id, target_position)
+              await self.highrise.chat(f"تم سحبك إلى موقع {target_username}")
+          else:
+              await self.highrise.chat("المستخدم غير موجود.")
+      else:
+          await self.highrise.chat("يجب تحديد اسم المستخدم.")
 
     
-    if message.lower().startswith("!dancelist"):
+    if message.lower().startswith("!help"):
       await self.highrise.send_whisper(
           user.id,
           " celebrate , macarena , charging , shopp , maniac , snake  , frog , superpose , cute , tiktok9 , weird , cutey ,  punkguitar , zombierun , fashi , gravity , icecream , wrong , uwu , tiktok4 , shy2 , anime"
       )
 
-    if message.lower().startswith("!looplist"):
-      await self.highrise.send_whisper(
-          user.id,
-          "Sleep, Pouty, Sleepy, Sit, Shy, Enthused, Feel The Beat, Yes, The Wave, Tired, Think, Theatrical, Snowangel, Sad, Peace, No, Model, Flirty, Amused, Laugh, Kiss, Jump, Judo Chop"
-      )
+    if message.lower().startswith("/loop1"):
+      dance_list_part1 = [
+          "0 = sleep",
+          "2 = sad",
+          "4 = sitfloor",
+          "5 = shy",
+          "6 = enthusiastic",
+          "7 = headbobbing",
+          "8 = wave",
+          "9 = tired",
+          "10 = think",
+          "11 = theatrical",
+          "12 = snowangel",
+          "13 = shy",
+          "14 = sad",
+          "15 = peace",
+          "16 = model",
+          "17 = lust",
+          "18 = laughing2",
+          "19 = laughing",
+          "20 = kiss",
+      ]
 
-    if message.lower().startswith("!looplist"):
-      await self.highrise.send_whisper(
-          user.id,
-          "Hot, Hello, Happy, Face Palm, Exasperated, Collapse, Dab, Confusion, Cold, Charging, Bunny Hop, Bow, Boo, Falling Apart, Thumbs Up, Point, Sneeze, Smirk, Sick, Stunned, Cursing, Clap, Raise"
-      )
+      # تحويل القائمة إلى سلسلة نصية مفصولة بفواصل
+      dance_list_str1 = ", ".join(dance_list_part1)
 
-    if message.lower().startswith("!looplist"):
-      await self.highrise.send_whisper(
-          user.id,
-          "Angry, Savage, Dontstartnow, Yoga Flow, Shopping, Russian, Macarena, Blackpink, Bashful, Anime, Tiktok10, "
-      )
+      # إرسال الرسالة
+      await self.highrise.send_whisper(user.id, dance_list_str1)
 
-    if message.lower().startswith("!looplist"):
-      await self.highrise.send_whisper(
-          user.id,
-          " Sayso, Uwu, Fashion, Gravity, Icescream, Weird, Cute, Superpose, Frog, Snake, Gagging, Flex, Pose5, Pose3, Pose7, Pose8, Telekinesis, Pennywise, Teleport, Swordfight, Snow, Greedy, Singalong"
-      )
+    if message.lower().startswith("/loop2"):
+      dance_list_part2 = [
+          "21 Kick = kicking",
+          "22 = jumpb",
+          "23 = judochop",
+          "24 Jetpack = jetpack",
+          "25 = hot",
+          "26 = hello",
+          "27 = happy",
+          "28 = exasperatedb",
+          "29 = exasperated",
+          "30 = death2",
+          "31 = death",
+          "32 = dab",
+          "33 = curtsy",
+          "34 = confused",
+          "35 = cold",
+          "36 = charging",
+          "37 = bunnyhop",
+          "38 = bow",
+          "39 = boo",
+          "40 = baseball",
+      ]
 
-    if message.lower().startswith("!help"):
-      await self.highrise.send_whisper(
-          user.id,
-          "For dances > !dancelist  \n For loop > !looplist \n For teleport > !to @user \n To transport yourself > 1st , 2nd , 3rd "
-      )
+      # تحويل القائمة إلى سلسلة نصية مفصولة بفواصل
+      dance_list_str2 = ", ".join(dance_list_part2)
+
+      # إرسال الرسالة
+      await self.highrise.send_whisper(user.id, dance_list_str2)
+
+    if message.lower().startswith("/loop3"):
+      dance_list_part3 = [
+          "41 = apart", "42 = thumbsup", "43 = there", "44 = sneeze",
+          "45 = smirking", "46 = sick", "47 = scared", "48 = punch",
+          "49 = dizzy", "50 = cursing", "51 = crying", "52 = clapping",
+          "53 = celebrate", "54 = arrogance", "55 = angry", "56 = voguehands",
+          "57 = tiktok8", "58 = tiktok2", "59 = spiritual",
+          "60 = shoppingcart", "61 = russian", "62 = macarena",
+          "63 = blackpink", "64 = enthusiastic"
+      ]
+
+      # تحويل القائمة إلى سلسلة نصية مفصولة بفواصل
+      dance_list_str3 = ", ".join(dance_list_part3)
+
+      # إرسال الرسالة
+      await self.highrise.send_whisper(user.id, dance_list_str3)
+
+    if message.lower().startswith("!loop "):
+      await self.loop(user, message)
+    elif message.lower().startswith("!stoploop"):
+      await self.stop_loop(user, message)
+
+    if message == "!1st":
+      await self.highrise.teleport(user.id, Position(18.5, 0.0, 8.5))
+
+    if message == "!2nd":
+      await self.highrise.teleport(user.id, Position(12.0, 9.0, 8.5))
+
+    if message == "!3rd":
+      await self.highrise.teleport(user.id, Position(10.0, 18.0, 11.5))
+
+    if message.lstrip().startswith('Move'):
+      if user.username.lower() in ["xmika_", "___arko___", "highmindz", "bigcheech", "darkvendetta","rndom__", "ladyonherbear", "chibisol","kaiicandy", "fluffypanda_","_mr_deo_", "soiarity", "tilts", "xvli", "xymcxo", "devdevine","voltuparis", "_.i0v3._","vanqulshed", "bayxleaf","emmybbyg", "theeznuts", "nej_lve", "t9s", "gungeon", "deathtrip", "xanny_bars", "ersp", "scream", "srijon", "hrtrash","0fvx","JAVA32"]:
+        response = await self.highrise.get_room_users()
+        users = [content[0] for content in response.content]
+        usernames = [user.username.lower() for user in users]
+
+        parts = message[1:].split()
+        args = parts[1:]
+
+        if len(args) < 2:
+          await self.highrise.send_whisper(user.id,"Use: Command > Name > Place ")
+          return
+        elif args[0][0] != "@":
+          await self.highrise.send_whisper(user.id,f" Incorrect format  '@username'.  ")
+          return
+        elif args[0][1:].lower() not in usernames:
+          await self.highrise.send_whisper(user.id,f"{args[0][1:]}Not in the room.")
+          return
+
+        position_name = " ".join(args[1:])
+        if position_name == '!1st':
+          dest = Position(13.5, 0.0, 19.5)
+
+        elif position_name == '!2nd':
+          dest = Position(15.0, 7.25, 21.5)
+
+        elif position_name == '!3rd':
+          dest = Position(15.0, 16.75, 22.5)
+
+        else:
+          return await self.highrise.send_whisper(user.id,f"  The site is wrong ")
+        user_id = next(
+            (u.id for u in users if u.username.lower() == args[0][1:].lower()),
+            None)
+        if not user_id:
+          await self.highrise.send_whisper(user.id,f"User {args[0][1:]} unavailable ")
+          return
+
+        await self.highrise.teleport(user_id, dest)
+        await self.highrise.send_whisper(
+            user.id, f" move  {args[0][1:]} to ({dest.x}, {dest.y}, {dest.z})")
+      else:
+        await self.highrise.send_whisper(user.id, " You can't fix this ")
+    else:
+      pass
+      
+    
