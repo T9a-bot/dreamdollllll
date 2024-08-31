@@ -137,81 +137,78 @@ class MyBot(BaseBot):
       await self.highrise.chat(message)
 
   async def loop(self: BaseBot, user: User, message: str) -> None:
-    async def loop_emote(self: BaseBot, user: User, emote_name: str) -> None:
-        emote_id = ""
-        for emote in emote_list:
-            if emote[0].lower() == emote_name.lower():
-                emote_id = emote[1]
-                break
-        if emote_id == "":
-            await self.highrise.chat("Invalid emote")
-            return
-        user_position = None
-        user_in_room = False
-        room_users = (await self.highrise.get_room_users()).content
-        for room_user, position in room_users:
-            if room_user.id == user.id:
-                user_position = position
-                start_position = position
-                user_in_room = True
-                break
-        if user_position == None:
-            await self.highrise.chat("User not found")
-            return
-        await self.highrise.chat(f"@{user.username} is looping {emote_name}")
-        while start_position == user_position:
-            try:
-                await self.highrise.send_emote(emote_id, user.id)
-            except:
-                await self.highrise.chat(f"Sorry, @{user.username}, this emote isn't free or you don't own it.")
-                return
-            await asyncio.sleep(10)
-            room_users = (await self.highrise.get_room_users()).content
-            user_in_room = False
-            for room_user, position in room_users:
-                if room_user.id == user.id:
-                    user_position = position
-                    user_in_room = True
-                    break
-            if user_in_room == False:
-                break
-    try:
-        splited_message = message.split(" ")
-        
-        emote_name = " ".join(splited_message[1:])
-    except:
-        await self.highrise.chat("Invalid command format. Please use '/loop <emote name>")
-        return
-    else:   
-        taskgroup = self.highrise.tg
-        task_list : list[Task] = list(taskgroup._tasks)
-        for task in task_list:
-            if task.get_name() == user.username:
-                # Removes the task from the task group
-                task.cancel()
+      async def loop_emote(self: BaseBot, user: User, emote_name: str) -> None:
+          emote_id = ""
+          for emote in emote_list:
+              if emote[0].lower() == emote_name.lower():
+                  emote_id = emote[1]
+                  break
+          if emote_id == "":
+              await self.highrise.chat("Invalid emote")
+              return
 
-        room_users = (await self.highrise.get_room_users()).content
-        user_list  = []
-        for room_user, pos in room_users:
-            user_list.append(room_user.username)
+          await self.highrise.chat(f"@{user.username} is looping {emote_name}")
 
-        taskgroup.create_task(coro=loop_emote(self, user, emote_name))
-        task_list : list[Task] = list(taskgroup._tasks)
-        for task in task_list:
-            if task.get_coro().__name__ == "loop_emote" and not (task.get_name() in user_list):
-                task.set_name(user.username)
+          # الحصول على مدة الرقصة
+          emote_duration = emote_durations.get(emote_name)
+          if emote_duration is None:
+              await self.highrise.chat(f"The emote {emote_name} does not have a specified duration.")
+              return
+
+          while True:
+              try:
+                  await self.highrise.send_emote(emote_id, user.id)
+              except:
+                  await self.highrise.chat(f"Sorry, @{user.username}, this emote isn't free or you don't own it.")
+                  return
+
+              # فترة انتظار لمدة الرقصة
+              await asyncio.sleep(emote_duration)
+
+              room_users = (await self.highrise.get_room_users()).content
+              user_in_room = False
+              for room_user, position in room_users:
+                  if room_user.id == user.id:
+                      user_in_room = True
+                      break
+              if not user_in_room:
+                  break
+
+      try:
+          splited_message = message.split(" ")
+          # The emote name is every string after the first one
+          emote_name = " ".join(splited_message[1:])
+      except:
+          await self.highrise.chat("Invalid command format. Please use '/loop <emote name>.")
+          return
+      else:   
+          taskgroup = self.highrise.tg
+          task_list: list[Task] = list(taskgroup._tasks)
+          for task in task_list:
+              if task.get_name() == user.username:
+                  # Removes the task from the task group
+                  task.cancel()
+
+          room_users = (await self.highrise.get_room_users()).content
+          user_list = [room_user.username for room_user, pos in room_users]
+
+          taskgroup.create_task(coro=loop_emote(self, user, emote_name))
+          task_list: list[Task] = list(taskgroup._tasks)
+          for task in task_list:
+              if task.get_coro().__name__ == "loop_emote" and task.get_name() not in user_list:
+                  task.set_name(user.username)
 
   async def stop_loop(self: BaseBot, user: User, message: str) -> None:
-    taskgroup = self.highrise.tg
-    task_list: list[Task] = list(taskgroup._tasks)
-    for task in task_list:
-      print(task.get_name())
-      if task.get_name() == user.username:
-        task.cancel()
-        await self.highrise.chat(f"Stopping your emote loop, {user.username}!")
-        return
-    await self.highrise.chat(f"You're not looping any emotes, {user.username}")
-    return
+      taskgroup = self.highrise.tg
+      task_list: list[Task] = list(taskgroup._tasks)
+      for task in task_list:
+          print(task.get_name())
+          if task.get_name() == user.username:
+              task.cancel()
+              await self.highrise.chat(f"Stopping your emote loop, {user.username}!")
+              return
+      await self.highrise.chat(f"You're not looping any emotes, {user.username}")
+      return
 
   async def on_user_join(self, user: User, position: Position | AnchorPosition):
         room_users = await self.highrise.get_room_users()
@@ -267,7 +264,7 @@ class MyBot(BaseBot):
             your_pos = content[1]
             break
       if not your_pos:
-        await self.highrise.send_whisper(user.id, f"احداثيات غير صالحه")
+        await self.highrise.send_whisper(user.id, f"Invalid coordinates")
         return
       await self.highrise.chat("I,m coming ")
       await self.highrise.walk_to(your_pos)
@@ -439,11 +436,11 @@ class MyBot(BaseBot):
           if target_username in self.user_positions:
               target_position = self.user_positions[target_username]
               await self.highrise.teleport(user.id, target_position)
-              await self.highrise.chat(f"تم سحبك إلى موقع {target_username}")
+              await self.highrise.chat(f"You have been pulled to a site {target_username}")
           else:
-              await self.highrise.chat("المستخدم غير موجود.")
+              await self.highrise.chat("User location not specified.")
       else:
-          await self.highrise.chat("يجب تحديد اسم المستخدم.")
+          await self.highrise.chat("Username must be specified.")
 
     
     if message.lower().startswith("!help"):
